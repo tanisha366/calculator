@@ -12,10 +12,11 @@
     body {
       background: #f0f2f5;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
       height: 100vh;
       margin: 0;
+      padding: 20px;
     }
     .calculator {
       background: #fff;
@@ -73,32 +74,92 @@
       margin-top: 10px;
       height: 20px;
     }
+
+    .history-container {
+      margin-top: 20px;
+      width: 320px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-header h3 {
+      margin: 0;
+      font-size: 16px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+    .history-btns {
+      display: flex;
+      gap: 10px;
+    }
+    .history-list {
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 14px;
+      color: #333;
+      margin-top: 10px;
+    }
+    .history-list div {
+      padding: 4px 0;
+      border-bottom: 1px dashed #ddd;
+    }
+    .hidden {
+      display: none;
+    }
+    .small-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .clear-history {
+      background-color: #e53935;
+      color: white;
+    }
+    .toggle-history {
+      background-color: #607d8b;
+      color: white;
+    }
   </style>
 </head>
 <body>
-  <div class="calculator" id="calculator">
-    <!-- UI will be added by JavaScript -->
+  <div class="calculator" id="calculator"></div>
+
+  <div class="history-container">
+    <div class="history-header">
+      <h3>🧠 History</h3>
+      <div class="history-btns">
+        <button class="small-btn toggle-history" onclick="toggleHistory()">Hide</button>
+        <button class="small-btn clear-history" onclick="clearHistory()">Clear</button>
+      </div>
+    </div>
+    <div class="history-list" id="historyList"></div>
   </div>
 
   <script>
     const calc = document.getElementById("calculator");
-
-    // Create Display
     const display = document.createElement("div");
     display.className = "display";
     display.id = "display";
     display.textContent = "0";
 
-    // Create Buttons Container
     const buttons = document.createElement("div");
     buttons.className = "buttons";
 
-    // Create Message Area
     const message = document.createElement("div");
     message.className = "message";
     message.id = "message";
 
-    // Button labels
+    const historyList = document.getElementById("historyList");
+    const toggleBtn = document.querySelector(".toggle-history");
+
     const btnLayout = [
       '7','8','9','/',
       '4','5','6','*',
@@ -110,7 +171,6 @@
     let currentInput = '';
     let history = [];
 
-    // Add Buttons
     btnLayout.forEach(val => {
       const btn = document.createElement("button");
       btn.className = "btn";
@@ -123,12 +183,10 @@
       buttons.appendChild(btn);
     });
 
-    // Assemble the Calculator
     calc.appendChild(display);
     calc.appendChild(buttons);
     calc.appendChild(message);
 
-    // Handle Button & Keyboard Input
     function handleInput(value) {
       if (value === 'C') {
         currentInput = '';
@@ -145,9 +203,11 @@
         try {
           let result = eval(currentInput);
           if (!isFinite(result)) throw Error();
-          history.push(currentInput + '=' + result);
+          const entry = currentInput + ' = ' + result;
+          history.push(entry);
           localStorage.setItem("calcHistory", JSON.stringify(history));
           updateDisplay(result);
+          updateHistoryUI();
           currentInput = result.toString();
         } catch {
           updateDisplay("Error");
@@ -167,7 +227,31 @@
       setTimeout(() => message.textContent = '', 1500);
     }
 
-    // Keyboard Support
+    function updateHistoryUI() {
+      historyList.innerHTML = '';
+      history.slice().reverse().forEach(item => {
+        const div = document.createElement("div");
+        div.textContent = item;
+        historyList.appendChild(div);
+      });
+    }
+
+    function clearHistory() {
+      history = [];
+      localStorage.removeItem("calcHistory");
+      updateHistoryUI();
+      showMessage("History cleared!");
+    }
+
+    function toggleHistory() {
+      historyList.classList.toggle("hidden");
+      if (historyList.classList.contains("hidden")) {
+        toggleBtn.textContent = "Show";
+      } else {
+        toggleBtn.textContent = "Hide";
+      }
+    }
+
     document.addEventListener('keydown', e => {
       const validKeys = '0123456789+-*/.=';
       if (validKeys.includes(e.key)) handleInput(e.key);
@@ -176,11 +260,14 @@
       if (e.key.toLowerCase() === 'c') handleInput('C');
     });
 
-    // Load History if exists
     window.onload = () => {
       const saved = localStorage.getItem("calcHistory");
-      if (saved) history = JSON.parse(saved);
+      if (saved) {
+        history = JSON.parse(saved);
+        updateHistoryUI();
+      }
     };
   </script>
 </body>
 </html>
+
