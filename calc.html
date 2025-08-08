@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JS Hackathon Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .calculator {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 320px;
+    }
+    .display {
+      background: #222;
+      color: #0f0;
+      padding: 20px;
+      font-size: 24px;
+      text-align: right;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      min-height: 50px;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    .btn {
+      padding: 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 8px;
+      background: #eee;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    .btn:hover {
+      background: #ddd;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .operator {
+      background: #f9a825;
+      color: white;
+    }
+    .equal {
+      background: #43a047;
+      color: white;
+    }
+    .clear {
+      background: #e53935;
+      color: white;
+    }
+    .message {
+      color: #888;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 10px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator" id="calculator">
+    <!-- UI will be added by JavaScript -->
+  </div>
+
+  <script>
+    const calc = document.getElementById("calculator");
+
+    // Create Display
+    const display = document.createElement("div");
+    display.className = "display";
+    display.id = "display";
+    display.textContent = "0";
+
+    // Create Buttons Container
+    const buttons = document.createElement("div");
+    buttons.className = "buttons";
+
+    // Create Message Area
+    const message = document.createElement("div");
+    message.className = "message";
+    message.id = "message";
+
+    // Button labels
+    const btnLayout = [
+      '7','8','9','/',
+      '4','5','6','*',
+      '1','2','3','-',
+      '0','.','=','+',
+      'C','⌫'
+    ];
+
+    let currentInput = '';
+    let history = [];
+
+    // Add Buttons
+    btnLayout.forEach(val => {
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      if (['+', '-', '*', '/'].includes(val)) btn.classList.add("operator");
+      if (val === '=') btn.classList.add("equal");
+      if (val === 'C') btn.classList.add("clear");
+
+      btn.textContent = val;
+      btn.addEventListener('click', () => handleInput(val));
+      buttons.appendChild(btn);
+    });
+
+    // Assemble the Calculator
+    calc.appendChild(display);
+    calc.appendChild(buttons);
+    calc.appendChild(message);
+
+    // Handle Button & Keyboard Input
+    function handleInput(value) {
+      if (value === 'C') {
+        currentInput = '';
+        updateDisplay('0');
+        showMessage("Cleared!");
+        return;
+      }
+      if (value === '⌫') {
+        currentInput = currentInput.slice(0, -1);
+        updateDisplay(currentInput || '0');
+        return;
+      }
+      if (value === '=') {
+        try {
+          let result = eval(currentInput);
+          if (!isFinite(result)) throw Error();
+          history.push(currentInput + '=' + result);
+          localStorage.setItem("calcHistory", JSON.stringify(history));
+          updateDisplay(result);
+          currentInput = result.toString();
+        } catch {
+          updateDisplay("Error");
+        }
+        return;
+      }
+      currentInput += value;
+      updateDisplay(currentInput);
+    }
+
+    function updateDisplay(val) {
+      display.textContent = val;
+    }
+
+    function showMessage(msg) {
+      message.textContent = msg;
+      setTimeout(() => message.textContent = '', 1500);
+    }
+
+    // Keyboard Support
+    document.addEventListener('keydown', e => {
+      const validKeys = '0123456789+-*/.=';
+      if (validKeys.includes(e.key)) handleInput(e.key);
+      if (e.key === 'Enter') handleInput('=');
+      if (e.key === 'Backspace') handleInput('⌫');
+      if (e.key.toLowerCase() === 'c') handleInput('C');
+    });
+
+    // Load History if exists
+    window.onload = () => {
+      const saved = localStorage.getItem("calcHistory");
+      if (saved) history = JSON.parse(saved);
+    };
+  </script>
+</body>
+</html>
